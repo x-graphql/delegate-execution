@@ -44,4 +44,9 @@ final readonly class SchemaExecutionDelegator implements SchemaExecutionDelegato
     {
         return $this->schema;
     }
+
+    public function getPromiseAdapter(): PromiseAdapter
+    {
+        return $this->promiseAdapter;
+    }
 }

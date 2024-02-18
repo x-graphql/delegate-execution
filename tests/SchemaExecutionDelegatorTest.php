@@ -22,6 +22,7 @@ class SchemaExecutionDelegatorTest extends TestCase
         $instance = new SchemaExecutionDelegator($schema);
 
         $this->assertInstanceOf(SchemaExecutionDelegator::class, $instance);
+        $this->assertInstanceOf(SyncPromiseAdapter::class, $instance->getPromiseAdapter());
         $this->assertEquals($schema, $instance->getSchema());
     }
 
