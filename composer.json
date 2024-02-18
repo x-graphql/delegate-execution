@@ -1,0 +1,28 @@
+{
+    "name": "x-graphql/delegate-execution",
+    "description": "Support to delegate execution of GraphQL schema",
+    "type": "library",
+    "require-dev": {
+        "phpunit/phpunit": "^11.0"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "XGraphQL\\DelegateExecution\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "XGraphQL\\DelegateExecution\\Test\\": "tests/"
+        }
+    },
+    "minimum-stability": "stable",
+    "require": {
+        "php": ">=8.2",
+        "webonyx/graphql-php": "^15.9",
+        "x-graphql/utils": "^0.1.0"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}
