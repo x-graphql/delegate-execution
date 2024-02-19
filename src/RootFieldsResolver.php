@@ -73,32 +73,28 @@ final class RootFieldsResolver
     {
         /// __typename field should be existed in $value
         ///  because we have added it to delegated query
-        $implTypename = $value[Introspection::TYPE_NAME_FIELD_NAME];
-        $abstractType = $info->fieldDefinition->getType();
+        $typename = $value[Introspection::TYPE_NAME_FIELD_NAME];
 
-        if ($abstractType instanceof WrappingType) {
-            $abstractType = $abstractType->getInnermostType();
+        if (!$info->schema->hasType($typename)) {
+            $abstractType = $info->fieldDefinition->getType();
+
+            if ($abstractType instanceof WrappingType) {
+                $abstractType = $abstractType->getInnermostType();
+            }
+
+            throw new LogicException(
+                sprintf('Expect type: `%s` implementing `%s` should be exist in schema', $typename, $abstractType)
+            );
         }
 
-        foreach ($info->schema->getPossibleTypes($abstractType) as $type) {
-            if ($type->name() !== $implTypename) {
-                continue;
-            }
+        $implType = $info->schema->getType($typename);
 
-            if ($type instanceof AbstractType) {
-                $type->config['resolveType'] ??= $this->resolveAbstractType(...);
-            }
-
-            if ($type instanceof ObjectType) {
-                $type->resolveFieldFn ??= $this->resolveObjectFields(...);
-            }
-
-            return $type;
+        if ($implType instanceof ObjectType) {
+            $implType->resolveFieldFn = $this->resolveObjectFields(...);
         }
 
-        throw new LogicException(
-            sprintf('Expect type: `%s` implementing `%s` should be exist in schema', $implTypename, $abstractType)
-        );
+        /// If impl type is not object, executor should throw error.
+        return $implType;
     }
 
     private function resolveObjectFields(array $value, array $args, mixed $context, ResolveInfo $info): Promise
