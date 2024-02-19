@@ -36,13 +36,12 @@ final class RootFieldsResolver
             /// We need to clone all fragments and operation to make sure it can not be mutated by delegator.
             $operation = $info->operation->cloneDeep();
             $fragments = array_map(fn(FragmentDefinitionNode $fragment) => $fragment->cloneDeep(), $info->fragments);
-            $variables = $info->variableValues;
 
             /// Add typename for detecting object type of interface or union
             SelectionSet::addTypename($operation->getSelectionSet());
             SelectionSet::addTypenameToFragments($fragments);
 
-            $this->delegatedPromises[$info->operation] = $this->delegator->delegate($operation, $fragments, $variables);
+            $this->delegatedPromises[$info->operation] = $this->delegator->delegate($info->schema, $operation, $fragments, $info->variableValues);
         }
 
         return $this->resolve($info);

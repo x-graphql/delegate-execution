@@ -26,7 +26,7 @@ final readonly class SchemaExecutionDelegator implements ExecutionDelegatorInter
     /**
      * @throws \Exception
      */
-    public function delegate(OperationDefinitionNode $operation, array $fragments = [], array $variables = []): Promise
+    public function delegate(Schema $executionSchema, OperationDefinitionNode $operation, array $fragments = [], array $variables = []): Promise
     {
         $source = new DocumentNode([
             'definitions' => new NodeList([...$fragments, $operation])
