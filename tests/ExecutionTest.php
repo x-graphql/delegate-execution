@@ -11,7 +11,6 @@ use PHPUnit\Framework\TestCase;
 use XGraphQL\DelegateExecution\Execution;
 use XGraphQL\DelegateExecution\ExecutionDelegatorInterface;
 use XGraphQL\DelegateExecution\RootFieldsResolver;
-use XGraphQL\DelegateExecution\SchemaExecutionDelegator;
 
 class ExecutionTest extends TestCase
 {
