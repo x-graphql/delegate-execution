@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace XGraphQL\DelegateExecution\Test;
+namespace XGraphQL\DelegateExecution;
 
 use GraphQL\Executor\Promise\Adapter\SyncPromiseAdapter;
 use GraphQL\Executor\Promise\Promise;
@@ -12,9 +12,8 @@ use GraphQL\Language\AST\DocumentNode;
 use GraphQL\Language\AST\NodeList;
 use GraphQL\Language\AST\OperationDefinitionNode;
 use GraphQL\Type\Schema;
-use XGraphQL\DelegateExecution\ExecutionDelegatorInterface;
 
-final readonly class SchemaExecutionDelegator implements ExecutionDelegatorInterface
+final readonly class SchemaExecutionDelegator implements SchemaExecutionDelegatorInterface
 {
     private PromiseAdapter $promiseAdapter;
 
@@ -39,6 +38,11 @@ final readonly class SchemaExecutionDelegator implements ExecutionDelegatorInter
             variableValues: $variables,
             operationName: $operation->name?->value,
         );
+    }
+
+    public function getSchema(): Schema
+    {
+        return $this->schema;
     }
 
     public function getPromiseAdapter(): PromiseAdapter
