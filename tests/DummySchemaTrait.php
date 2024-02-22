@@ -19,11 +19,11 @@ trait DummySchemaTrait
                 'fields' => [
                     'dummy' => [
                         'type' => Type::string(),
-                        'resolve' => fn() => 'dummy'
+                        'resolve' => fn () => 'dummy'
                     ],
                     'dummy_error' => [
                         'type' => Type::string(),
-                        'resolve' => fn() => throw new Error('Dummy error')
+                        'resolve' => fn () => throw new Error('Dummy error')
                     ],
                     'dummy_object' => [
                         'type' => new ObjectType([
@@ -32,7 +32,7 @@ trait DummySchemaTrait
                                 'dummy' => Type::nonNull(Type::string()),
                             ],
                         ]),
-                        'resolve' => fn() => [
+                        'resolve' => fn () => [
                             'dummy' => 'dummy object field'
                         ]
                     ]
@@ -43,7 +43,7 @@ trait DummySchemaTrait
                 'fields' => [
                     'dummy' => [
                         'type' => Type::string(),
-                        'resolve' => fn() => 'dummy'
+                        'resolve' => fn () => 'dummy'
                     ]
                 ]
             ])

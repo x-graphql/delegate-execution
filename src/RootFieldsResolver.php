@@ -35,7 +35,7 @@ final class RootFieldsResolver
         if (!isset($this->delegatedPromises[$info->operation])) {
             /// We need to clone all fragments and operation to make sure it can not be mutated by delegator.
             $operation = $info->operation->cloneDeep();
-            $fragments = array_map(fn(FragmentDefinitionNode $fragment) => $fragment->cloneDeep(), $info->fragments);
+            $fragments = array_map(fn (FragmentDefinitionNode $fragment) => $fragment->cloneDeep(), $info->fragments);
 
             /// Add typename for detecting object type of interface or union
             SelectionSet::addTypename($operation->getSelectionSet());
@@ -65,7 +65,7 @@ final class RootFieldsResolver
 
         $promise = $this->delegatedPromises[$info->operation];
 
-        return $promise->then(fn(ExecutionResult $result) => $this->accessResultByPath($info->path, $result));
+        return $promise->then(fn (ExecutionResult $result) => $this->accessResultByPath($info->path, $result));
     }
 
     private function resolveAbstractType(array $value, mixed $context, ResolveInfo $info): Type
