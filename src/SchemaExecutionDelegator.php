@@ -28,7 +28,7 @@ final readonly class SchemaExecutionDelegator implements SchemaExecutionDelegato
     public function delegate(Schema $executionSchema, OperationDefinitionNode $operation, array $fragments = [], array $variables = []): Promise
     {
         $source = new DocumentNode([
-            'definitions' => new NodeList([...$fragments, $operation])
+            'definitions' => new NodeList([...array_values($fragments), $operation])
         ]);
 
         return GraphQL::promiseToExecute(
