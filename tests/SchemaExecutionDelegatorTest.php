@@ -47,7 +47,7 @@ fragment b on Query {
 GQL
         );
 
-        $promise = $instance->delegate($schema, $operation, [$fragment], ['include' => true]);
+        $promise = $instance->delegate($schema, $operation, ['b' => $fragment], ['include' => true]);
 
         $this->assertInstanceOf(Promise::class, $promise);
 
