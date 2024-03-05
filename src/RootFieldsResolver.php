@@ -25,8 +25,10 @@ final class RootFieldsResolver
      */
     private \WeakMap $delegatedPromises;
 
-    public function __construct(private readonly ExecutionDelegatorInterface $delegator)
-    {
+    public function __construct(
+        private readonly ExecutionDelegatorInterface $delegator,
+        private readonly ?DelegatedErrorsReporterInterface $delegatedErrorsReporter = null,
+    ) {
         $this->delegatedPromises = new \WeakMap();
     }
 
@@ -41,7 +43,22 @@ final class RootFieldsResolver
             SelectionSet::addTypename($operation->getSelectionSet());
             SelectionSet::addTypenameToFragments($fragments);
 
-            $this->delegatedPromises[$info->operation] = $this->delegator->delegate($info->schema, $operation, $fragments, $info->variableValues);
+            $this->delegatedPromises[$info->operation] = $this
+                ->delegator
+                ->delegate(
+                    $info->schema,
+                    $operation,
+                    $fragments,
+                    $info->variableValues
+                )->then(
+                    function (ExecutionResult $result): ExecutionResult {
+                        if ([] !== $result->errors) {
+                            $this->delegatedErrorsReporter?->reportErrors($result->errors);
+                        }
+
+                        return $result;
+                    }
+                );
         }
 
         return $this->resolve($info);
