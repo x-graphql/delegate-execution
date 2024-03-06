@@ -68,21 +68,26 @@ final class RootFieldsResolver
     {
         $type = $info->returnType;
 
+        $this->prepareTypeResolver($type);
+
+        $promise = $this->delegatedPromises[$info->operation];
+
+        return $promise->then(fn (ExecutionResult $result) => $this->accessResultByPath($info->path, $result));
+    }
+
+    private function prepareTypeResolver(Type $type): void
+    {
         if ($type instanceof WrappingType) {
             $type = $type->getInnermostType();
         }
 
         if ($type instanceof AbstractType) {
-            $type->config['resolveType'] ??= $this->resolveAbstractType(...);
+            $type->config['resolveType'] = $this->resolveAbstractType(...);
         }
 
         if ($type instanceof ObjectType) {
-            $type->resolveFieldFn ??= $this->resolveObjectFields(...);
+            $type->resolveFieldFn = $this->resolveObjectFields(...);
         }
-
-        $promise = $this->delegatedPromises[$info->operation];
-
-        return $promise->then(fn (ExecutionResult $result) => $this->accessResultByPath($info->path, $result));
     }
 
     private function resolveAbstractType(array $value, mixed $context, ResolveInfo $info): Type
@@ -105,9 +110,7 @@ final class RootFieldsResolver
 
         $implType = $info->schema->getType($typename);
 
-        if ($implType instanceof ObjectType) {
-            $implType->resolveFieldFn = $this->resolveObjectFields(...);
-        }
+        $this->prepareTypeResolver($implType);
 
         /// If impl type is not object, executor should throw error.
         return $implType;
