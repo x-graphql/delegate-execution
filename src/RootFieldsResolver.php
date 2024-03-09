@@ -17,6 +17,7 @@ use GraphQL\Type\Definition\WrappingType;
 use GraphQL\Type\Introspection;
 use GraphQL\Type\Schema;
 use XGraphQL\DelegateExecution\Exception\LogicException;
+use XGraphQL\DelegateExecution\Exception\RuntimeException;
 use XGraphQL\Utils\SelectionSet;
 
 final class RootFieldsResolver
@@ -165,7 +166,7 @@ final class RootFieldsResolver
             $pos = array_shift($pathAccessed);
 
             if (false === array_key_exists($pos, $data)) {
-                throw new Error(
+                throw new RuntimeException(
                     sprintf('Delegated execution result is missing field value at path: `%s`', implode('.', $path))
                 );
             }
