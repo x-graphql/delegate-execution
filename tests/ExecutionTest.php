@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace XGraphQL\DelegateExecution\Test;
 
+use GraphQL\Error\Error;
 use GraphQL\GraphQL;
 use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Utils\BuildSchema;
 use PHPUnit\Framework\TestCase;
+use XGraphQL\DelegateExecution\DelegatedErrorsReporterInterface;
 use XGraphQL\DelegateExecution\Execution;
 use XGraphQL\DelegateExecution\ExecutionDelegatorInterface;
 use XGraphQL\DelegateExecution\RootFieldsResolver;
@@ -171,5 +173,43 @@ GQL
         );
 
         $this->assertEquals('Expect type: `DummyObject` implementing `Unknown` should be exist in schema', $result->errors[0]->getMessage());
+    }
+
+    public function testErrorDuringDelegateExecution(): void
+    {
+        /** @var Error[] $delegatedErrors */
+        $delegatedErrors = null;
+        $reporter = $this->createMock(DelegatedErrorsReporterInterface::class);
+
+        $reporter->expects($this->once())->method('reportErrors')->willReturnCallback(
+            function (array $errors) use (&$delegatedErrors): void {
+                $delegatedErrors = $errors;
+            }
+        );
+
+        $delegator = new BadExecutionDelegator();
+        $schema = BuildSchema::build(
+            <<<'SDL'
+type Query {
+    dummy: String!
+}
+SDL
+        );
+        Execution::delegate($schema, $delegator, $reporter);
+
+        $result = GraphQL::executeQuery(
+            $schema,
+            <<<'GQL'
+query {
+  dummy
+}
+GQL
+        );
+
+        $this->assertNotNull($delegatedErrors);
+        $this->assertEquals('Error during delegate execution', $delegatedErrors[0]->getMessage());
+        $this->assertNotNull($delegatedErrors[0]->getPrevious());
+        $this->assertEquals('Bad execution delegator', $delegatedErrors[0]->getPrevious()->getMessage());
+        $this->assertEquals('Delegated execution result is missing field value at path: `dummy`', $result->errors[0]->getMessage());
     }
 }

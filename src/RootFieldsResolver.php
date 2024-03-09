@@ -15,6 +15,7 @@ use GraphQL\Type\Definition\ResolveInfo;
 use GraphQL\Type\Definition\Type;
 use GraphQL\Type\Definition\WrappingType;
 use GraphQL\Type\Introspection;
+use GraphQL\Type\Schema;
 use XGraphQL\DelegateExecution\Exception\LogicException;
 use XGraphQL\Utils\SelectionSet;
 
@@ -35,33 +36,57 @@ final class RootFieldsResolver
     public function __invoke(mixed $value, array $arguments, mixed $context, ResolveInfo $info): Promise
     {
         if (!isset($this->delegatedPromises[$info->operation])) {
-            /// We need to clone all fragments and operation to make sure it can not be mutated by delegator.
-            $operation = $info->operation->cloneDeep();
-            $fragments = array_map(fn (FragmentDefinitionNode $fragment) => $fragment->cloneDeep(), $info->fragments);
-
-            /// Add typename for detecting object type of interface or union
-            SelectionSet::addTypename($operation->getSelectionSet());
-            SelectionSet::addTypenameToFragments($fragments);
-
-            $this->delegatedPromises[$info->operation] = $this
-                ->delegator
-                ->delegate(
-                    $info->schema,
-                    $operation,
-                    $fragments,
-                    $info->variableValues
-                )->then(
-                    function (ExecutionResult $result): ExecutionResult {
-                        if ([] !== $result->errors) {
-                            $this->delegatedErrorsReporter?->reportErrors($result->errors);
-                        }
-
-                        return $result;
-                    }
-                );
+            $this->delegatedPromises[$info->operation] = $this->delegateToExecute(
+                $info->schema,
+                $info->operation,
+                $info->fragments,
+                $info->variableValues
+            );
         }
 
         return $this->resolve($info);
+    }
+
+
+    /**
+     * @param Schema $schema
+     * @param OperationDefinitionNode $operation
+     * @param array<string, FragmentDefinitionNode> $fragments
+     * @param array<string, mixed> $variables
+     * @return Promise
+     */
+    private function delegateToExecute(Schema $schema, OperationDefinitionNode $operation, array $fragments, array $variables): Promise
+    {
+        try {
+            /// We need to clone all fragments and operation to make sure it can not be mutated by delegator.
+            $delegateOperation = $operation->cloneDeep();
+            $delegateFragments = array_map(fn (FragmentDefinitionNode $fragment) => $fragment->cloneDeep(), $fragments);
+
+            /// Add typename for detecting object type of interface or union
+            SelectionSet::addTypename($delegateOperation->getSelectionSet());
+            SelectionSet::addTypenameToFragments($delegateFragments);
+
+            $promise = $this->delegator->delegate($schema, $delegateOperation, $delegateFragments, $variables);
+        } catch (\Throwable $exception) {
+            $result = new ExecutionResult(
+                null,
+                [
+                    new Error('Error during delegate execution', [$operation], previous: $exception)
+                ],
+            );
+
+            $promise = $this->delegator->getPromiseAdapter()->createFulfilled($result);
+        }
+
+        return $promise->then(
+            function (ExecutionResult $result): ExecutionResult {
+                if ([] !== $result->errors) {
+                    $this->delegatedErrorsReporter?->reportErrors($result->errors);
+                }
+
+                return $result;
+            }
+        );
     }
 
     private function resolve(ResolveInfo $info): Promise
