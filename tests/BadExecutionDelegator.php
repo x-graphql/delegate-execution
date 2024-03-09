@@ -13,7 +13,6 @@ use XGraphQL\DelegateExecution\ExecutionDelegatorInterface;
 
 final readonly class BadExecutionDelegator implements ExecutionDelegatorInterface
 {
-
     public function delegate(Schema $executionSchema, OperationDefinitionNode $operation, array $fragments = [], array $variables = []): Promise
     {
         throw new \RuntimeException('Bad execution delegator');
