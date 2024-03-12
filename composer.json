@@ -1,6 +1,6 @@
 {
     "name": "x-graphql/delegate-execution",
-    "description": "Support to delegate execution of GraphQL schema",
+    "description": "Delegate GraphQL schema execution",
     "type": "library",
     "require-dev": {
         "phpunit/phpunit": "^11.0",
@@ -21,6 +21,7 @@
     "require": {
         "php": ">=8.2",
         "webonyx/graphql-php": "^15.9",
+        "x-graphql/delegate": "^0.1.0",
         "x-graphql/utils": ">=0.1.0"
     },
     "config": {
