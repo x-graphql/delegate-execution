@@ -30,7 +30,7 @@ final class RootFieldsResolver
 
     public function __construct(
         private readonly DelegatorInterface $delegator,
-        private readonly ?DelegatedErrorsReporterInterface $delegatedErrorsReporter = null,
+        private readonly ?ErrorsReporterInterface $delegatedErrorsReporter = null,
     ) {
         $this->delegatedPromises = new \WeakMap();
     }
