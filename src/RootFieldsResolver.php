@@ -16,6 +16,7 @@ use GraphQL\Type\Definition\Type;
 use GraphQL\Type\Definition\WrappingType;
 use GraphQL\Type\Introspection;
 use GraphQL\Type\Schema;
+use XGraphQL\Delegate\DelegatorInterface;
 use XGraphQL\DelegateExecution\Exception\LogicException;
 use XGraphQL\DelegateExecution\Exception\RuntimeException;
 use XGraphQL\Utils\SelectionSet;
@@ -28,7 +29,7 @@ final class RootFieldsResolver
     private \WeakMap $delegatedPromises;
 
     public function __construct(
-        private readonly ExecutionDelegatorInterface $delegator,
+        private readonly DelegatorInterface $delegator,
         private readonly ?DelegatedErrorsReporterInterface $delegatedErrorsReporter = null,
     ) {
         $this->delegatedPromises = new \WeakMap();
@@ -67,7 +68,7 @@ final class RootFieldsResolver
             SelectionSet::addTypename($delegateOperation->getSelectionSet());
             SelectionSet::addTypenameToFragments($delegateFragments);
 
-            $promise = $this->delegator->delegate($schema, $delegateOperation, $delegateFragments, $variables);
+            $promise = $this->delegator->delegateToExecute($schema, $delegateOperation, $delegateFragments, $variables);
         } catch (\Throwable $exception) {
             $result = new ExecutionResult(
                 null,

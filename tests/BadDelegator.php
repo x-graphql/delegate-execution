@@ -9,11 +9,11 @@ use GraphQL\Executor\Promise\Promise;
 use GraphQL\Executor\Promise\PromiseAdapter;
 use GraphQL\Language\AST\OperationDefinitionNode;
 use GraphQL\Type\Schema;
-use XGraphQL\DelegateExecution\ExecutionDelegatorInterface;
+use XGraphQL\Delegate\DelegatorInterface;
 
-final readonly class BadExecutionDelegator implements ExecutionDelegatorInterface
+final readonly class BadDelegator implements DelegatorInterface
 {
-    public function delegate(Schema $executionSchema, OperationDefinitionNode $operation, array $fragments = [], array $variables = []): Promise
+    public function delegateToExecute(Schema $executionSchema, OperationDefinitionNode $operation, array $fragments = [], array $variables = []): Promise
     {
         throw new \RuntimeException('Bad execution delegator');
     }

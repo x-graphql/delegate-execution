@@ -9,6 +9,8 @@ use GraphQL\GraphQL;
 use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Utils\BuildSchema;
 use PHPUnit\Framework\TestCase;
+use XGraphQL\Delegate\DelegatorInterface;
+use XGraphQL\Delegate\SchemaDelegator;
 use XGraphQL\DelegateExecution\DelegatedErrorsReporterInterface;
 use XGraphQL\DelegateExecution\Execution;
 use XGraphQL\DelegateExecution\ExecutionDelegatorInterface;
@@ -21,7 +23,7 @@ class ExecutionTest extends TestCase
 
     public function testDelegateSetup(): void
     {
-        $delegator = $this->createStub(ExecutionDelegatorInterface::class);
+        $delegator = $this->createStub(DelegatorInterface::class);
         $schema = BuildSchema::build(
             <<<'SDL'
 type Query {
@@ -42,7 +44,7 @@ SDL
     public function testExecution(): void
     {
         $delegateSchema = $this->createDummySchema();
-        $delegator = new SchemaExecutionDelegator($delegateSchema);
+        $delegator = new SchemaDelegator($delegateSchema);
         $schema = BuildSchema::build(
             <<<'SDL'
 type Query {
@@ -90,7 +92,7 @@ GQL
     public function testLimitAccessFieldOfDelegateSchema(): void
     {
         $delegateSchema = $this->createDummySchema();
-        $delegator = new SchemaExecutionDelegator($delegateSchema);
+        $delegator = new SchemaDelegator($delegateSchema);
         $schema = BuildSchema::build(
             <<<'SDL'
 type Query {
@@ -118,7 +120,7 @@ GQL
     public function testSchemaConflictFieldDefinitionWithDelegateSchema(): void
     {
         $delegateSchema = $this->createDummySchema();
-        $delegator = new SchemaExecutionDelegator($delegateSchema);
+        $delegator = new SchemaDelegator($delegateSchema);
         $schema = BuildSchema::build(
             <<<'SDL'
 type Query {
@@ -143,7 +145,7 @@ GQL
     public function testSchemaConflictAbstractTypeWithDelegateSchema(): void
     {
         $delegateSchema = $this->createDummySchema();
-        $delegator = new SchemaExecutionDelegator($delegateSchema);
+        $delegator = new SchemaDelegator($delegateSchema);
         $schema = BuildSchema::build(
             <<<'SDL'
 type Query {
@@ -187,7 +189,7 @@ GQL
             }
         );
 
-        $delegator = new BadExecutionDelegator();
+        $delegator = new BadDelegator();
         $schema = BuildSchema::build(
             <<<'SDL'
 type Query {

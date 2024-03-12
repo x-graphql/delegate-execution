@@ -21,6 +21,7 @@
     "require": {
         "php": ">=8.2",
         "webonyx/graphql-php": "^15.9",
+        "x-graphql/delegate": "^0.1.0",
         "x-graphql/utils": ">=0.1.0"
     },
     "config": {
