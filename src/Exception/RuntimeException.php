@@ -6,5 +6,4 @@ namespace XGraphQL\DelegateExecution\Exception;
 
 class RuntimeException extends \RuntimeException implements ExceptionInterface
 {
-
 }

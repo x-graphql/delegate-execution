@@ -11,11 +11,9 @@ use GraphQL\Utils\BuildSchema;
 use PHPUnit\Framework\TestCase;
 use XGraphQL\Delegate\DelegatorInterface;
 use XGraphQL\Delegate\SchemaDelegator;
-use XGraphQL\DelegateExecution\DelegatedErrorsReporterInterface;
+use XGraphQL\DelegateExecution\ErrorsReporterInterface;
 use XGraphQL\DelegateExecution\Execution;
-use XGraphQL\DelegateExecution\ExecutionDelegatorInterface;
 use XGraphQL\DelegateExecution\RootFieldsResolver;
-use XGraphQL\DelegateExecution\SchemaExecutionDelegator;
 
 class ExecutionTest extends TestCase
 {
@@ -181,7 +179,7 @@ GQL
     {
         /** @var Error[] $delegatedErrors */
         $delegatedErrors = null;
-        $reporter = $this->createMock(DelegatedErrorsReporterInterface::class);
+        $reporter = $this->createMock(ErrorsReporterInterface::class);
 
         $reporter->expects($this->once())->method('reportErrors')->willReturnCallback(
             function (array $errors) use (&$delegatedErrors): void {

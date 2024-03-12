@@ -6,7 +6,10 @@ namespace XGraphQL\DelegateExecution;
 
 use GraphQL\Error\Error;
 
-interface DelegatedErrorsReporterInterface
+/**
+ * Help to report errors during delegate GraphQL schema execution
+ */
+interface ErrorsReporterInterface
 {
     /**
      * @param Error[] $errors

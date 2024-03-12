@@ -12,7 +12,7 @@ final class Execution
     public static function delegate(
         Schema $schema,
         DelegatorInterface $delegator,
-        DelegatedErrorsReporterInterface $errorsReporter = null,
+        ErrorsReporterInterface $errorsReporter = null,
     ): void {
         foreach (['query', 'mutation', 'subscription'] as $operation) {
             $rootType = $schema->getOperationType($operation);
