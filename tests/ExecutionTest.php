@@ -47,11 +47,15 @@ SDL
             <<<'SDL'
 type Query {
     dummy: String!
-    dummy_object: DummyObject!
+    dummy_object: CustomInterface!
     dummy_error: String
 }
 
-type DummyObject {
+interface CustomInterface {
+  dummy: String!
+}
+
+type DummyObject implements CustomInterface {
    dummy: String!
 }
 SDL
