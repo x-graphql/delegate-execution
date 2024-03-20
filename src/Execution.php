@@ -61,6 +61,60 @@ final class Execution
         }
     }
 
+    private function prepareType(Type $type): void
+    {
+        if ($type instanceof WrappingType) {
+            $type = $type->getInnermostType();
+        }
+
+        if (isset($this->preparedTypes[$type])) {
+            return;
+        }
+
+        if ($type instanceof ObjectType) {
+            foreach ($type->getFields() as $fieldDef) {
+                /** @var FieldDefinition $fieldDef */
+                $fieldDef->resolveFn = $this->resolve(...);
+            }
+
+            $type->resolveFieldFn = null;
+        }
+
+        if ($type instanceof AbstractType) {
+            $resolveType = fn(array $value, mixed $context, ResolveInfo $info) => $this->resolveAbstractType(
+                $type,
+                $value,
+                $context,
+                $info,
+            );
+
+            $type->config['resolveType'] = $resolveType;
+        }
+
+        $this->preparedTypes[$type] = true;
+    }
+
+    private function resolveAbstractType(AbstractType $abstractType, array $value, mixed $context, ResolveInfo $info): Type
+    {
+        /// __typename field should be existed in $value
+        ///  because we have added it to delegated query
+        $typename = $value[Introspection::TYPE_NAME_FIELD_NAME];
+
+        if (!$info->schema->hasType($typename)) {
+            throw new LogicException(
+                sprintf('Expect type: `%s` implementing `%s` should be exist in schema', $typename, $abstractType)
+            );
+        }
+
+        $implType = $info->schema->getType($typename);
+
+        assert($implType instanceof ObjectType);
+
+        $this->prepareType($implType);
+
+        return $implType;
+    }
+
     private function resolve(mixed $value, array $args, mixed $context, ResolveInfo $info): Promise
     {
         $promise = $this->delegatedPromises[$info->operation] ??= $this->delegateToExecute(
@@ -118,60 +172,6 @@ final class Execution
                 return $result;
             }
         );
-    }
-
-    private function prepareType(Type $type): void
-    {
-        if ($type instanceof WrappingType) {
-            $type = $type->getInnermostType();
-        }
-
-        if (isset($this->preparedTypes[$type])) {
-            return;
-        }
-
-        if ($type instanceof ObjectType) {
-            foreach ($type->getFields() as $fieldDef) {
-                /** @var FieldDefinition $fieldDef */
-                $fieldDef->resolveFn = $this->resolve(...);
-            }
-
-            $type->resolveFieldFn = null;
-        }
-
-        if ($type instanceof AbstractType) {
-            $resolveType = fn(array $value, mixed $context, ResolveInfo $info) => $this->resolveAbstractType(
-                $type,
-                $value,
-                $context,
-                $info,
-            );
-
-            $type->config['resolveType'] = $resolveType;
-        }
-
-        $this->preparedTypes[$type] = true;
-    }
-
-    private function resolveAbstractType(AbstractType $abstractType, array $value, mixed $context, ResolveInfo $info): Type
-    {
-        /// __typename field should be existed in $value
-        ///  because we have added it to delegated query
-        $typename = $value[Introspection::TYPE_NAME_FIELD_NAME];
-
-        if (!$info->schema->hasType($typename)) {
-            throw new LogicException(
-                sprintf('Expect type: `%s` implementing `%s` should be exist in schema', $typename, $abstractType)
-            );
-        }
-
-        $implType = $info->schema->getType($typename);
-
-        assert($implType instanceof ObjectType);
-
-        $this->prepareType($implType);
-
-        return $implType;
     }
 
     /**
