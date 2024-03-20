@@ -27,7 +27,7 @@ final class Execution
     /**
      * @var \WeakMap<ObjectType>
      */
-    private \WeakMap $hijackedObjects;
+    private \WeakMap $hijackedResolvers;
 
     /**
      * @var \WeakMap<OperationDefinitionNode>
@@ -38,7 +38,7 @@ final class Execution
         private readonly DelegatorInterface $delegator,
         private readonly ?ErrorsReporterInterface $errorsReporter
     ) {
-        $this->hijackedObjects = new \WeakMap();
+        $this->hijackedResolvers = new \WeakMap();
         $this->delegatedPromises = new \WeakMap();
     }
 
@@ -62,7 +62,7 @@ final class Execution
 
     private function hijackResolver(ObjectType $type): void
     {
-        if (isset($this->hijackedObjects[$type])) {
+        if (isset($this->hijackedResolvers[$type])) {
             return;
         }
 
@@ -73,7 +73,7 @@ final class Execution
 
         $type->resolveFieldFn = null;
 
-        $this->hijackedObjects[$type] = true;
+        $this->hijackedResolvers[$type] = true;
     }
 
     private function resolve(mixed $value, array $args, mixed $context, ResolveInfo $info): Promise
