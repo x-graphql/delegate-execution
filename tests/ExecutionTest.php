@@ -13,7 +13,6 @@ use XGraphQL\Delegate\DelegatorInterface;
 use XGraphQL\Delegate\SchemaDelegator;
 use XGraphQL\DelegateExecution\ErrorsReporterInterface;
 use XGraphQL\DelegateExecution\Execution;
-use XGraphQL\DelegateExecution\RootFieldsResolver;
 
 class ExecutionTest extends TestCase
 {
@@ -29,14 +28,15 @@ type Query {
 }
 SDL
         );
-        $rootType = $schema->getOperationType('query');
+        $operationType = $schema->getOperationType('query');
 
-        $this->assertInstanceOf(ObjectType::class, $rootType);
-        $this->assertNull($rootType->resolveFieldFn);
+        $this->assertInstanceOf(ObjectType::class, $operationType);
+        $this->assertNull($operationType->resolveFieldFn);
+        $this->assertNull($operationType->getField('dummy')->resolveFn);
 
         Execution::delegate($schema, $delegator);
 
-        $this->assertInstanceOf(RootFieldsResolver::class, $rootType->resolveFieldFn);
+        $this->assertIsCallable($operationType->getField('dummy')->resolveFn);
     }
 
     public function testExecution(): void
@@ -47,11 +47,15 @@ SDL
             <<<'SDL'
 type Query {
     dummy: String!
-    dummy_object: DummyObject!
+    dummy_object: CustomInterface!
     dummy_error: String
 }
 
-type DummyObject {
+interface CustomInterface {
+  dummy: String!
+}
+
+type DummyObject implements CustomInterface {
    dummy: String!
 }
 SDL
