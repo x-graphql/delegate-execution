@@ -91,7 +91,7 @@ final class Execution
         try {
             /// We need to clone all fragments and operation to make sure it can not be mutated by delegator.
             $delegateOperation = $operation->cloneDeep();
-            $delegateFragments = array_map(fn (FragmentDefinitionNode $fragment) => $fragment->cloneDeep(), $fragments);
+            $delegateFragments = array_map(fn(FragmentDefinitionNode $fragment) => $fragment->cloneDeep(), $fragments);
 
             /// Add typename for detecting object type of interface or union
             SelectionSet::addTypename($delegateOperation->getSelectionSet());
@@ -140,25 +140,26 @@ final class Execution
         }
 
         if ($type instanceof AbstractType) {
-            $type->config['resolveType'] = $this->resolveAbstractType(...);
+            $resolveType = fn(array $value, mixed $context, ResolveInfo $info) => $this->resolveAbstractType(
+                $type,
+                $value,
+                $context,
+                $info,
+            );
+
+            $type->config['resolveType'] = $resolveType;
         }
 
         $this->preparedTypes[$type] = true;
     }
 
-    private function resolveAbstractType(array $value, mixed $context, ResolveInfo $info): Type
+    private function resolveAbstractType(AbstractType $abstractType, array $value, mixed $context, ResolveInfo $info): Type
     {
         /// __typename field should be existed in $value
         ///  because we have added it to delegated query
         $typename = $value[Introspection::TYPE_NAME_FIELD_NAME];
 
         if (!$info->schema->hasType($typename)) {
-            $abstractType = $info->fieldDefinition->getType();
-
-            if ($abstractType instanceof WrappingType) {
-                $abstractType = $abstractType->getInnermostType();
-            }
-
             throw new LogicException(
                 sprintf('Expect type: `%s` implementing `%s` should be exist in schema', $typename, $abstractType)
             );
