@@ -11,6 +11,7 @@ use GraphQL\Language\AST\FragmentDefinitionNode;
 use GraphQL\Language\AST\OperationDefinitionNode;
 use GraphQL\Type\Definition\AbstractType;
 use GraphQL\Type\Definition\FieldDefinition;
+use GraphQL\Type\Definition\NamedType;
 use GraphQL\Type\Definition\ObjectType;
 use GraphQL\Type\Definition\ResolveInfo;
 use GraphQL\Type\Definition\Type;
@@ -25,9 +26,9 @@ use XGraphQL\Utils\SelectionSet;
 final class Execution
 {
     /**
-     * @var \WeakMap<ObjectType>
+     * @var \WeakMap<NamedType&Type>
      */
-    private \WeakMap $hijackedResolvers;
+    private \WeakMap $preparedTypes;
 
     /**
      * @var \WeakMap<OperationDefinitionNode>
@@ -38,7 +39,7 @@ final class Execution
         private readonly DelegatorInterface $delegator,
         private readonly ?ErrorsReporterInterface $errorsReporter
     ) {
-        $this->hijackedResolvers = new \WeakMap();
+        $this->preparedTypes = new \WeakMap();
         $this->delegatedPromises = new \WeakMap();
     }
 
@@ -56,24 +57,8 @@ final class Execution
                 continue;
             }
 
-            $execution->hijackResolver($operationType);
+            $execution->prepareType($operationType);
         }
-    }
-
-    private function hijackResolver(ObjectType $type): void
-    {
-        if (isset($this->hijackedResolvers[$type])) {
-            return;
-        }
-
-        foreach ($type->getFields() as $fieldDef) {
-            /** @var FieldDefinition $fieldDef */
-            $fieldDef->resolveFn = $this->resolve(...);
-        }
-
-        $type->resolveFieldFn = null;
-
-        $this->hijackedResolvers[$type] = true;
     }
 
     private function resolve(mixed $value, array $args, mixed $context, ResolveInfo $info): Promise
@@ -87,7 +72,7 @@ final class Execution
 
         return $promise->then(
             function (ExecutionResult $result) use ($info): mixed {
-                $this->prepareReturnType($info->returnType);
+                $this->prepareType($info->returnType);
 
                 return $this->accessResultByPath($info->path, $result);
             }
@@ -135,19 +120,30 @@ final class Execution
         );
     }
 
-    private function prepareReturnType(Type $type): void
+    private function prepareType(Type $type): void
     {
         if ($type instanceof WrappingType) {
             $type = $type->getInnermostType();
         }
 
+        if (isset($this->preparedTypes[$type])) {
+            return;
+        }
+
         if ($type instanceof ObjectType) {
-            $this->hijackResolver($type);
+            foreach ($type->getFields() as $fieldDef) {
+                /** @var FieldDefinition $fieldDef */
+                $fieldDef->resolveFn = $this->resolve(...);
+            }
+
+            $type->resolveFieldFn = null;
         }
 
         if ($type instanceof AbstractType) {
             $type->config['resolveType'] = $this->resolveAbstractType(...);
         }
+
+        $this->preparedTypes[$type] = true;
     }
 
     private function resolveAbstractType(array $value, mixed $context, ResolveInfo $info): Type
@@ -172,7 +168,7 @@ final class Execution
 
         assert($implType instanceof ObjectType);
 
-        $this->hijackResolver($implType);
+        $this->prepareType($implType);
 
         return $implType;
     }
