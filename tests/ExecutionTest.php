@@ -91,6 +91,39 @@ GQL
         $this->assertEquals('Dummy error', $result->errors[0]->getMessage());
     }
 
+    public function testLazyOperationTypeExecution(): void
+    {
+        $delegateSchema = $this->createDummySchema();
+        $delegator = new SchemaDelegator($delegateSchema);
+        $schema = BuildSchema::build(
+            <<<'SDL'
+type Query {
+    dummy: String!
+}
+SDL
+        );
+        $queryType = $schema->getConfig()->query;
+        $schema->getConfig()->query = fn () => $queryType;
+
+        Execution::delegate($schema, $delegator);
+
+        $result = GraphQL::executeQuery(
+            $schema,
+            <<<'GQL'
+query {
+  dummy
+}
+GQL
+        );
+
+        $this->assertEquals(
+            [
+                'dummy' => 'dummy'
+            ],
+            $result->data
+        );
+    }
+
     public function testLimitAccessFieldOfDelegateSchema(): void
     {
         $delegateSchema = $this->createDummySchema();
@@ -141,7 +174,10 @@ query {
 GQL
         );
 
-        $this->assertEquals('Delegated execution result is missing field value at path: `conflict_field`', $result->errors[0]->getMessage());
+        $this->assertEquals(
+            'Delegated execution result is missing field value at path: `conflict_field`',
+            $result->errors[0]->getMessage()
+        );
     }
 
     public function testSchemaConflictAbstractTypeWithDelegateSchema(): void
@@ -176,7 +212,10 @@ query {
 GQL
         );
 
-        $this->assertEquals('Expect type: `DummyObject` implementing `Unknown` should be exist in schema', $result->errors[0]->getMessage());
+        $this->assertEquals(
+            'Expect type: `DummyObject` implementing `Unknown` should be exist in schema',
+            $result->errors[0]->getMessage()
+        );
     }
 
     public function testErrorDuringDelegateExecution(): void
@@ -214,6 +253,9 @@ GQL
         $this->assertEquals('Error during delegate execution', $delegatedErrors[0]->getMessage());
         $this->assertNotNull($delegatedErrors[0]->getPrevious());
         $this->assertEquals('Bad execution delegator', $delegatedErrors[0]->getPrevious()->getMessage());
-        $this->assertEquals('Delegated execution result is missing field value at path: `dummy`', $result->errors[0]->getMessage());
+        $this->assertEquals(
+            'Delegated execution result is missing field value at path: `dummy`',
+            $result->errors[0]->getMessage()
+        );
     }
 }

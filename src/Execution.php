@@ -47,18 +47,29 @@ final class Execution
         Schema $schema,
         DelegatorInterface $delegator,
         ErrorsReporterInterface $errorsReporter = null,
-    ): void {
+    ): Schema {
         $execution = new Execution($delegator, $errorsReporter);
+        $schemaConfig = $schema->getConfig();
 
         foreach (['query', 'mutation', 'subscription'] as $operation) {
-            $operationType = $schema->getOperationType($operation);
+            $operationConfig = $schemaConfig->{$operation};
 
-            if (null === $operationType) {
-                continue;
+            if ($operationConfig instanceof ObjectType) {
+                $execution->prepareType($operationConfig);
             }
 
-            $execution->prepareType($operationType);
+            if (is_callable($operationConfig)) {
+                $schemaConfig->{$operation} = function () use ($operationConfig, $execution) {
+                    $type = $operationConfig();
+
+                    $execution->prepareType($type);
+
+                    return $type;
+                };
+            }
         }
+
+        return $schema;
     }
 
     private function prepareType(Type $type): void
@@ -81,7 +92,7 @@ final class Execution
         }
 
         if ($type instanceof AbstractType) {
-            $resolveType = fn(array $value, mixed $context, ResolveInfo $info) => $this->resolveAbstractType(
+            $resolveType = fn (array $value, mixed $context, ResolveInfo $info) => $this->resolveAbstractType(
                 $type,
                 $value,
                 $context,
@@ -94,8 +105,12 @@ final class Execution
         $this->preparedTypes[$type] = true;
     }
 
-    private function resolveAbstractType(AbstractType $abstractType, array $value, mixed $context, ResolveInfo $info): Type
-    {
+    private function resolveAbstractType(
+        AbstractType $abstractType,
+        array $value,
+        mixed $context,
+        ResolveInfo $info
+    ): Type {
         /// __typename field should be existed in $value
         ///  because we have added it to delegated query
         $typename = $value[Introspection::TYPE_NAME_FIELD_NAME];
@@ -140,12 +155,16 @@ final class Execution
      * @param array<string, mixed> $variables
      * @return Promise
      */
-    private function delegateToExecute(Schema $schema, OperationDefinitionNode $operation, array $fragments, array $variables): Promise
-    {
+    private function delegateToExecute(
+        Schema $schema,
+        OperationDefinitionNode $operation,
+        array $fragments,
+        array $variables
+    ): Promise {
         try {
             /// We need to clone all fragments and operation to make sure it can not be mutated by delegator.
             $delegateOperation = $operation->cloneDeep();
-            $delegateFragments = array_map(fn(FragmentDefinitionNode $fragment) => $fragment->cloneDeep(), $fragments);
+            $delegateFragments = array_map(fn (FragmentDefinitionNode $fragment) => $fragment->cloneDeep(), $fragments);
 
             /// Add typename for detecting object type of interface or union
             SelectionSet::addTypename($delegateOperation->getSelectionSet());
